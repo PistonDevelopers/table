@@ -7,9 +7,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::ops::{ Deref, DerefMut, Index, IndexMut };
 use std::hash::{ Hash, Hasher, Writer };
+use std::borrow::BorrowFrom;
 
 /// Represents a dynamical typed value
-#[derive(Clone, Hash, PartialEq, Eq, Show)]
+#[derive(Clone, PartialEq, Eq, Show)]
 pub enum Value {
     /// An empty value.
     Null,
@@ -33,6 +34,35 @@ impl Value {
     /// Creates a new f64 value.
     pub fn f64(val: f64) -> Value {
         Value::F64(F64(val))
+    }
+}
+
+impl<S> Hash<S> for Value
+    where
+        S: Hasher + Writer
+{
+    fn hash(&self, state: &mut S) {
+        match self {
+            &Value::String(ref text) => text.hash(state),
+            &Value::Null => 0us.hash(state),
+            &Value::Bool(val) => val.hash(state),
+            &Value::Usize(val) => val.hash(state),
+            &Value::U64(val) => val.hash(state),
+            &Value::I64(val) => val.hash(state),
+            &Value::F64(val) => val.hash(state),
+            &Value::Table(ref val) => val.hash(state),
+        }
+    }
+}
+
+impl BorrowFrom<Value> for str {
+    fn borrow_from(owned: &Value) -> &str {
+        match owned {
+            &Value::String(ref text) => {
+                &text[]
+            }
+            _ => ""
+        }
     }
 }
 
@@ -112,6 +142,14 @@ impl Index<usize> for Table {
     }
 }
 
+impl<'b> Index<&'b str> for Table {
+    type Output = Value;
+
+    fn index<'a>(&'a self, index: &&'b str) -> &'a Value {
+        self.0.get(*index).unwrap()
+    }
+}
+
 impl IndexMut<Value> for Table {
     type Output = Value;
 
@@ -140,6 +178,20 @@ impl IndexMut<usize> for Table {
     }
 }
 
+impl<'b> IndexMut<&'b str> for Table {
+    type Output = Value;
+
+    fn index_mut<'a>(&'a mut self, index: &&'b str) -> &'a mut Value {
+        use std::borrow::ToOwned;
+
+        if !self.0.contains_key(*index) {
+            self.insert(Value::String(Arc::new((*index).to_owned())), 
+                Value::Null);
+        }
+        self.0.get_mut(*index).unwrap()
+    }
+}
+
 impl Table {
     /// Creates new table.
     pub fn new() -> Table {
@@ -158,6 +210,7 @@ mod tests {
 
     use super::*;
     use self::test::Bencher;
+    use std::sync::Arc;
 
     #[test]
     fn test_size() {
@@ -195,11 +248,26 @@ mod tests {
     #[test]
     fn test_table_as_key() {
         use std::borrow::ToOwned;
-        use std::sync::Arc;
 
         let a = Value::Table(Arc::new(Table::new()));
         let mut b = Table::new();
         b[a] = Value::String(Arc::new("hello".to_owned()));
+    }
+
+    #[test]
+    fn test_str_as_key() {
+        use std::borrow::ToOwned;
+
+        let mut a = Table::new();
+        a.insert(Value::String(Arc::new("hello".to_owned())),
+            Value::String(Arc::new("world".to_owned())));
+        assert!(
+            if let Some(&Value::String(_)) = a.get("hello") { true }
+            else { false }
+        );
+        assert_eq!(a["hello"], Value::String(Arc::new("world".to_owned())));
+        a["hello2"] = Value::String(Arc::new("world".to_owned()));
+        assert_eq!(a["hello"], a["hello2"]);
     }
 
     #[bench]
