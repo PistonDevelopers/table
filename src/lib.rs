@@ -35,6 +35,18 @@ impl Value {
     pub fn f64(val: f64) -> Value {
         Value::F64(F64(val))
     }
+
+    /// Creates a new string value.
+    pub fn str(val: &str) -> Value {
+        use std::borrow::ToOwned;
+
+        Value::String(Arc::new(val.to_owned()))
+    }
+
+    /// Creates a new table value.
+    pub fn table(val: Table) -> Value {
+        Value::Table(Arc::new(val))
+    }
 }
 
 impl<S> Hash<S> for Value
