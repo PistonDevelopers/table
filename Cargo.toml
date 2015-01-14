@@ -1,0 +1,17 @@
+[package]
+name = "table"
+version = "0.0.0"
+authors = [
+    "bvssvni <bvssvni@gmail.com>"
+]
+keywords = ["table", "records", "dynamical", "piston"]
+description = "A table object type for dynamical data"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/pistondevelopers/table.git"
+homepage = "https://github.com/pistondevelopers/table"
+
+[lib]
+name = "table"
+path = "src/lib.rs"
+
