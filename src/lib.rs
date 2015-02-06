@@ -1,5 +1,5 @@
 #![deny(missing_docs)]
-#![allow(unstable)]
+#![feature(core, std_misc, hash)]
 
 //! A table object type for dynamical data
 
@@ -10,7 +10,7 @@ use std::hash::{ Hash, Hasher, Writer };
 use std::borrow::BorrowFrom;
 
 /// Represents a dynamical typed value
-#[derive(Clone, PartialEq, Eq, Show)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Value {
     /// An empty value.
     Null,
@@ -79,7 +79,7 @@ impl BorrowFrom<Value> for str {
 }
 
 /// Wrapper for f64
-#[derive(Copy, Clone, PartialEq, Show)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct F64(pub f64);
 
 impl Eq for F64 {}
@@ -109,7 +109,7 @@ impl DerefMut for F64 {
 }
 
 /// The table object
-#[derive(Clone, PartialEq, Eq, Show)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Table(pub HashMap<Value, Value>);
 
 impl<S> Hash<S> for Table
