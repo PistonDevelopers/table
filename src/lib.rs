@@ -1,13 +1,14 @@
 #![deny(missing_docs)]
-#![feature(core, std_misc, hash)]
+#![feature(core, std_misc)]
+#![cfg_attr(test, feature(test, alloc))]
 
 //! A table object type for dynamical data
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::ops::{ Deref, DerefMut, Index, IndexMut };
-use std::hash::{ Hash, Hasher, Writer };
-use std::borrow::BorrowFrom;
+use std::hash::{ Hash, Hasher };
+use std::borrow::Borrow;
 
 /// Represents a dynamical typed value
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -49,14 +50,11 @@ impl Value {
     }
 }
 
-impl<S> Hash<S> for Value
-    where
-        S: Hasher + Writer
-{
-    fn hash(&self, state: &mut S) {
+impl Hash for Value {
+    fn hash<S>(&self, state: &mut S) where S: Hasher {
         match self {
             &Value::String(ref text) => text.hash(state),
-            &Value::Null => 0us.hash(state),
+            &Value::Null => 0.hash(state),
             &Value::Bool(val) => val.hash(state),
             &Value::Usize(val) => val.hash(state),
             &Value::U64(val) => val.hash(state),
@@ -67,11 +65,11 @@ impl<S> Hash<S> for Value
     }
 }
 
-impl BorrowFrom<Value> for str {
-    fn borrow_from(owned: &Value) -> &str {
-        match owned {
+impl Borrow<str> for Value {
+    fn borrow(&self) -> &str {
+        match self {
             &Value::String(ref text) => {
-                &text[]
+                &text
             }
             _ => ""
         }
@@ -84,11 +82,8 @@ pub struct F64(pub f64);
 
 impl Eq for F64 {}
 
-impl<S> Hash<S> for F64
-    where
-        S: Hasher + Writer
-{
-    fn hash(&self, state: &mut S) {
+impl Hash for F64 {
+    fn hash<S>(&self, state: &mut S) where S: Hasher {
         let val = self.0 as u64;
         val.hash(state)
     }
@@ -112,11 +107,8 @@ impl DerefMut for F64 {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Table(pub HashMap<Value, Value>);
 
-impl<S> Hash<S> for Table
-    where
-        S: Hasher + Writer
-{
-    fn hash(&self, state: &mut S) {
+impl Hash for Table {
+    fn hash<S>(&self, state: &mut S) where S: Hasher {
         for (key, val) in self.0.iter() {
             key.hash(state);
             val.hash(state);
@@ -163,8 +155,6 @@ impl<'b> Index<&'b str> for Table {
 }
 
 impl IndexMut<Value> for Table {
-    type Output = Value;
-
     fn index_mut<'a>(&'a mut self, index: &Value) -> &'a mut Value {
         use std::collections::hash_map::Entry;
 
@@ -177,8 +167,6 @@ impl IndexMut<Value> for Table {
 }
 
 impl IndexMut<usize> for Table {
-    type Output = Value;
-
     fn index_mut<'a>(&'a mut self, index: &usize) -> &'a mut Value {
         use std::collections::hash_map::Entry;
 
@@ -191,8 +179,6 @@ impl IndexMut<usize> for Table {
 }
 
 impl<'b> IndexMut<&'b str> for Table {
-    type Output = Value;
-
     fn index_mut<'a>(&'a mut self, index: &&'b str) -> &'a mut Value {
         use std::borrow::ToOwned;
 
@@ -247,12 +233,12 @@ mod tests {
     #[test]
     fn test_vec3() {
         let mut vec3 = Table::with_capacity(3);
-        vec3[0us] = Value::f64(1.0);
-        vec3[1us] = Value::f64(2.0);
-        vec3[2us] = Value::f64(3.0);
-        assert_eq!(vec3[0us], Value::f64(1.0));
-        assert_eq!(vec3[1us], Value::f64(2.0));
-        assert_eq!(vec3[2us], Value::f64(3.0));
+        vec3[0] = Value::f64(1.0);
+        vec3[1] = Value::f64(2.0);
+        vec3[2] = Value::f64(3.0);
+        assert_eq!(vec3[0], Value::f64(1.0));
+        assert_eq!(vec3[1], Value::f64(2.0));
+        assert_eq!(vec3[2], Value::f64(3.0));
         vec3.clear();
         assert_eq!(vec3.len(), 0);
     }
@@ -302,7 +288,7 @@ mod tests {
     fn bench_overwrite(bencher: &mut Bencher) {
         let mut a = Table::new();
         bencher.iter(|| {
-            a[0us] = Value::f64(1.0);
+            a[0] = Value::f64(1.0);
         });
     }
     
@@ -312,7 +298,7 @@ mod tests {
 
         let mut a = Arc::new(Table::new());
         bencher.iter(|| {
-            a.make_unique()[0us] = Value::f64(1.0);
+            a.make_unique()[0] = Value::f64(1.0);
         });
     }
 }
