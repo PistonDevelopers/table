@@ -1,5 +1,4 @@
 #![deny(missing_docs)]
-#![feature(core, std_misc)]
 #![cfg_attr(test, feature(test, alloc))]
 
 //! A table object type for dynamical data
@@ -133,60 +132,60 @@ impl DerefMut for Table {
 impl Index<Value> for Table {
     type Output = Value;
 
-    fn index<'a>(&'a self, index: &Value) -> &'a Value {
-        self.0.get(index).unwrap()
+    fn index<'a>(&'a self, index: Value) -> &'a Value {
+        self.0.get(&index).unwrap()
     }
 }
 
 impl Index<usize> for Table {
     type Output = Value;
 
-    fn index<'a>(&'a self, index: &usize) -> &'a Value {
-        self.0.get(&Value::Usize(*index)).unwrap()
+    fn index<'a>(&'a self, index: usize) -> &'a Value {
+        self.0.get(&Value::Usize(index)).unwrap()
     }
 }
 
 impl<'b> Index<&'b str> for Table {
     type Output = Value;
 
-    fn index<'a>(&'a self, index: &&'b str) -> &'a Value {
-        self.0.get(*index).unwrap()
+    fn index<'a>(&'a self, index: &'b str) -> &'a Value {
+        self.0.get(index).unwrap()
     }
 }
 
 impl IndexMut<Value> for Table {
-    fn index_mut<'a>(&'a mut self, index: &Value) -> &'a mut Value {
+    fn index_mut<'a>(&'a mut self, index: Value) -> &'a mut Value {
         use std::collections::hash_map::Entry;
 
         match self.0.entry(index.clone()) {
             Entry::Occupied(_) => {},
             Entry::Vacant(x) => {x.insert(Value::Null);}
         };
-        self.0.get_mut(index).unwrap()
+        self.0.get_mut(&index).unwrap()
     }
 }
 
 impl IndexMut<usize> for Table {
-    fn index_mut<'a>(&'a mut self, index: &usize) -> &'a mut Value {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut Value {
         use std::collections::hash_map::Entry;
 
-        match self.0.entry(Value::Usize(*index)) {
+        match self.0.entry(Value::Usize(index)) {
             Entry::Occupied(_) => {},
             Entry::Vacant(x) => {x.insert(Value::Null);}
         };
-        self.0.get_mut(&Value::Usize(*index)).unwrap()
+        self.0.get_mut(&Value::Usize(index)).unwrap()
     }
 }
 
 impl<'b> IndexMut<&'b str> for Table {
-    fn index_mut<'a>(&'a mut self, index: &&'b str) -> &'a mut Value {
+    fn index_mut<'a>(&'a mut self, index: &'b str) -> &'a mut Value {
         use std::borrow::ToOwned;
 
-        if !self.0.contains_key(*index) {
+        if !self.0.contains_key(index) {
             self.insert(Value::String(Arc::new((*index).to_owned())), 
                 Value::Null);
         }
-        self.0.get_mut(*index).unwrap()
+        self.0.get_mut(index).unwrap()
     }
 }
 
