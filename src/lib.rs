@@ -1,5 +1,5 @@
 #![deny(missing_docs)]
-#![cfg_attr(test, feature(test, alloc))]
+#![cfg_attr(test, feature(test))]
 
 //! A table object type for dynamical data
 
@@ -293,11 +293,14 @@ mod tests {
     
     #[bench]
     fn bench_overwrite_arc(bencher: &mut Bencher) {
+        fn is_copy<T: Clone>() {}
+
         use std::sync::Arc;
 
+        is_copy::<Arc<Table>>();
         let mut a = Arc::new(Table::new());
         bencher.iter(|| {
-            a.make_unique()[0] = Value::f64(1.0);
+            Arc::make_mut(&mut a)[0] = Value::f64(1.0);
         });
     }
 }
