@@ -49,6 +49,48 @@ impl Value {
     }
 }
 
+impl From<usize> for Value {
+    fn from(val: usize) -> Value {
+        Value::Usize(val)
+    }
+}
+
+impl From<u64> for Value {
+    fn from(val: u64) -> Value {
+        Value::U64(val)
+    }
+}
+
+impl From<i64> for Value {
+    fn from(val: i64) -> Value {
+        Value::I64(val)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(val: f64) -> Value {
+        Value::f64(val)
+    }
+}
+
+impl<'a> From<&'a str> for Value {
+    fn from(val: &'a str) -> Value {
+        Value::String(Arc::new(val.into()))
+    }
+}
+
+impl From<String> for Value {
+    fn from(val: String) -> Value {
+        Value::String(Arc::new(val))
+    }
+}
+
+impl From<Table> for Value {
+    fn from(val: Table) -> Value {
+        Value::Table(Arc::new(val))
+    }
+}
+
 impl Hash for Value {
     fn hash<S>(&self, state: &mut S) where S: Hasher {
         match self {
@@ -265,6 +307,17 @@ mod tests {
         assert_eq!(a["hello"], Value::String(Arc::new("world".to_owned())));
         a["hello2"] = Value::String(Arc::new("world".to_owned()));
         assert_eq!(a["hello"], a["hello2"]);
+    }
+
+    #[test]
+    fn test_conversion() {
+        let _: Value = (0 as usize).into();
+        let _: Value = (0 as u64).into();
+        let _: Value = (0 as i64).into();
+        let _: Value = 0.0.into();
+        let _: Value = "hello".into();
+        let _: Value = "hello".to_owned().into();
+        let _: Value = Table::new().into();
     }
 
     #[bench]
